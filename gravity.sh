@@ -1010,7 +1010,7 @@ gravity_ShowCount
 
 # Determine if DNS has been restarted by this instance of gravity
 if [[ -z "${dnsWasOffline:-}" ]]; then
-  "${PIHOLE_COMMAND}" restartdns reload
+  "${PIHOLE_COMMAND}" reloaddns
 fi
 
 gravity_Cleanup
