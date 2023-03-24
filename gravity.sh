@@ -563,56 +563,36 @@ parseList() {
   valid_domain_pattern="([a-z0-9]([a-z0-9_-]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]"
   abp_domain_pattern="\|\|${valid_domain_pattern}\^"
 
-
-  # 1. Add all valid domains
-    sed -r "/^${valid_domain_pattern}$/!d" "${src}" > "${temp_file}"
-
-  # 2. Add valid ABP style domains if there is at least one such domain
-  if  grep -E "^${abp_domain_pattern}$" -m 1 -q "${src}"; then
-    echo "  ${INFO} List contained AdBlock Plus style domains"
-    abp_domains=1
-    sed -r "/^${abp_domain_pattern}$/!d" "${src}" >> "${temp_file}"
-  fi
-
-
-  # Find lines containing no domains or with invalid characters (not matching regex above)
-  # This is simply everything that is not in $temp_file compared to $src
-  # Remove duplicates from the list
-  mapfile -t non_domains < <(grep -Fvf "${temp_file}" "${src}" | sort -u )
-
-  # 3. Remove trailing period (see https://github.com/pi-hole/pi-hole/issues/4701)
-  # 4. Append ,adlistID to every line
-  # 5. Ensures there is a newline on the last line
-  # and write everything to the target file
-  sed "s/\.$//;s/$/,${adlistID}/;/.$/a\\" "${temp_file}" >> "${target}"
-
   # A list of items of common local hostnames not to report as unusable
   # Some lists (i.e StevenBlack's) contain these as they are supposed to be used as HOST files
   # but flagging them as unusable causes more confusion than it's worth - so we suppress them from the output
   false_positives="localhost|localhost.localdomain|local|broadcasthost|localhost|ip6-localhost|ip6-loopback|lo0 localhost|ip6-localnet|ip6-mcastprefix|ip6-allnodes|ip6-allrouters|ip6-allhosts"
 
-  # if there are any non-domains, filter the array for false-positives
-  # Credit: https://stackoverflow.com/a/40264051
-  if [[ "${#non_domains[@]}" -gt 0 ]]; then
-    mapfile -d $'\0' -t non_domains < <(printf '%s\0' "${non_domains[@]}" | grep -Ezv "^${false_positives}")
+  # Extract valid domains from source file and append ,${adlistID} to each line
+  grep -E "^(${valid_domain_pattern}|${abp_domain_pattern})$" "${src}" | sed "s/$/,${adlistID}/" > "${temp_file}"
+  cat ${temp_file} >> ${target}
+  # Get the number of domains added from the above
+  num_domains="$(grep -c "^" "${temp_file}")"
+
+  # Check if the source file contained AdBlock Plus style domains, if so we set the global variable and inform the user
+  if  grep -E "^${abp_domain_pattern}$" -m 1 -q "${src}"; then
+    echo "  ${INFO} List contained AdBlock Plus style domains"
+    abp_domains=1
   fi
 
-  # Get a sample of non-domain entries, limited to 5 (the list should already have been de-duplicated)
-  IFS=" " read -r -a sample_non_domains <<< "$(tr ' ' '\n' <<< "${non_domains[@]}" | head -n 5 | tr '\n' ' ')"
+  # For completeness, we will get a count of non_domains (this is the number of entries left after stripping the source of comments/duplicates/false positives/domains)
+  grep -Ev "^(${valid_domain_pattern}|${abp_domain_pattern}|${false_positives})$" "${src}" > /tmp/invalid.domains
 
-  # Get the number of domains added
-  num_domains="$(grep -c "^" "${temp_file}")"
   # Get the number of non_domains (this is the number of entries left after stripping the source of comments/duplicates/false positives/domains)
-  num_non_domains="${#non_domains[@]}"
+  num_non_domains="$(grep -c "^" "/tmp/invalid.domains")"
 
   # If there are unusable lines, we display some information about them. This is not error or major cause for concern.
   if [[ "${num_non_domains}" -ne 0 ]]; then
     echo "  ${INFO} Imported ${num_domains} domains, ignoring ${num_non_domains} non-domain entries"
     echo "      Sample of non-domain entries:"
-    for each in "${sample_non_domains[@]}"
-    do
-        echo "        - ${each}"
-    done
+	  invalid_lines=$(grep -Ev "(${false_positives})" /tmp/invalid.domains | head -n 5)
+  	echo "${invalid_lines}" | awk '{print "        - " $0}'
+    rm /tmp/invalid.domains
   else
     echo "  ${INFO} Imported ${num_domains} domains"
   fi
