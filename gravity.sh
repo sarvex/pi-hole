@@ -544,7 +544,7 @@ gravity_DownloadBlocklists() {
 # is saved in gravtiy's info table to signal FTL if such domains are available
 abp_domains=0
 parseList() {
-  local adlistID="${1}" src="${2}" target="${3}" temp_file temp_file_base num_domains num_abp_domains valid_domain_pattern abp_domain_pattern
+  local adlistID="${1}" src="${2}" target="${3}" temp_file temp_file_base num_abp_domains valid_domain_pattern abp_domain_pattern
 
   # Print status message
   echo -ne "  ${INFO} Processing list..."
@@ -1009,7 +1009,11 @@ if ! gravity_CheckDNSResolutionAvailable; then
   exit 1
 fi
 
-gravity_DownloadBlocklists
+# Download blocklists
+if ! gravity_DownloadBlocklists; then
+  echo -e "   ${CROSS} Unable to create database. Please try again later. If the problem persists, please contact support."
+  exit 1
+fi
 
 # Create local.list
 gravity_generateLocalList
