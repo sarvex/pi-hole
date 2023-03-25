@@ -576,7 +576,7 @@ parseList() {
   # If there are unusable lines, we display some information about them. This is not error or major cause for concern.
   if [[ "${num_non_domains}" -ne 0 ]]; then
     type="domains"
-    if [[ "${abp_domains}" -ne 0]]; then
+    if [[ "${abp_domains}" -ne 0 ]]; then
       type="patterns"
     fi
     echo "  ${INFO} Imported ${num_domains} ${type}, ignoring ${num_non_domains} non-domain entries"
