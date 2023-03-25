@@ -1004,7 +1004,10 @@ if ! gravity_CheckDNSResolutionAvailable; then
   exit 1
 fi
 
-gravity_DownloadBlocklists
+if ! gravity_DownloadBlocklists; then
+  echo -e "   ${CROSS} Unable to create gravity database. Please try again later. If the problem persists, please contact support."
+  exit 1
+fi 
 
 # Create local.list
 gravity_generateLocalList
