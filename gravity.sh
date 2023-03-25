@@ -707,7 +707,8 @@ gravity_DownloadBlocklistFromUrl() {
   if [[ "${success}" == true ]]; then
     if [[ "${httpCode}" == "304" ]]; then
       # Add domains to database table file
-      pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
+      time parseList "${adlistID}" "${saveLocation}" "${target}"
+      time pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
       database_adlist_status "${adlistID}" "2"
       database_adlist_number "${adlistID}"
       done="true"
@@ -718,7 +719,8 @@ gravity_DownloadBlocklistFromUrl() {
       # Remove curl buffer file after its use
       rm "${listCurlBuffer}"
       # Add domains to database table file
-      pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
+      time parseList "${adlistID}" "${saveLocation}" "${target}"
+      time pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
       # Compare lists, are they identical?
       compareLists "${adlistID}" "${saveLocation}"
       # Update gravity database table (status and updated timestamp are set in
@@ -737,7 +739,8 @@ gravity_DownloadBlocklistFromUrl() {
     if [[ -r "${saveLocation}" ]]; then
       echo -e "  ${CROSS} List download failed: ${COL_LIGHT_GREEN}using previously cached list${COL_NC}"
       # Add domains to database table file
-      pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
+      time parseList "${adlistID}" "${saveLocation}" "${target}"
+      time pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
       database_adlist_number "${adlistID}"
       database_adlist_status "${adlistID}" "3"
     else
