@@ -575,14 +575,18 @@ parseList() {
   
   # If there are unusable lines, we display some information about them. This is not error or major cause for concern.
   if [[ "${num_non_domains}" -ne 0 ]]; then
-    echo "  ${INFO} Imported ${num_domains} domains, ignoring ${num_non_domains} non-domain entries"
+    type="domains"
+    if [[ "${abp_domains}" -ne 0]]; then
+      type="patterns"
+    fi
+    echo "  ${INFO} Imported ${num_domains} ${type}, ignoring ${num_non_domains} non-domain entries"
     echo "      Sample of non-domain entries:"
 	  invalid_lines=$(head -n 5 ${invalid_domains})
-    rm "${invalid_domains}"
   	echo "${invalid_lines}" | awk '{print "        - " $0}'
   else
     echo "  ${INFO} Imported ${num_domains} domains"
   fi
+  rm "${invalid_domains}"
 }
 
 compareLists() {
