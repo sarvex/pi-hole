@@ -561,7 +561,7 @@ parseList() {
 
   # Extract valid domains from source file and append ,${adlistID} to each line and save count to variable for display.
   num_domains=$(grep -E "^(${valid_domain_pattern}|${abp_domain_pattern})$" "${src}" | tee >(sed "s/$/,${adlistID}/" >> "${target}") | wc -l)
-  
+
   # Check if the source file contained AdBlock Plus style domains, if so we set the global variable and inform the user
   if  grep -E "^${abp_domain_pattern}$" -m 1 -q "${src}"; then
     echo "  ${INFO} List contained AdBlock Plus style domains"
@@ -572,7 +572,7 @@ parseList() {
   invalid_domains="$(mktemp -p "${GRAVITY_TMPDIR}" --suffix=".ph-non-domains")"
 
   num_non_domains=$(grep -Ev "^(${valid_domain_pattern}|${abp_domain_pattern}|${false_positives})$" "${src}" | tee ${invalid_domains} | wc -l)
-  
+
   # If there are unusable lines, we display some information about them. This is not error or major cause for concern.
   if [[ "${num_non_domains}" -ne 0 ]]; then
     type="domains"
@@ -707,7 +707,7 @@ gravity_DownloadBlocklistFromUrl() {
   if [[ "${success}" == true ]]; then
     if [[ "${httpCode}" == "304" ]]; then
       # Add domains to database table file
-      parseList "${adlistID}" "${saveLocation}" "${target}"
+      pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
       database_adlist_status "${adlistID}" "2"
       database_adlist_number "${adlistID}"
       done="true"
@@ -718,7 +718,7 @@ gravity_DownloadBlocklistFromUrl() {
       # Remove curl buffer file after its use
       rm "${listCurlBuffer}"
       # Add domains to database table file
-      parseList "${adlistID}" "${saveLocation}" "${target}"
+      pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
       # Compare lists, are they identical?
       compareLists "${adlistID}" "${saveLocation}"
       # Update gravity database table (status and updated timestamp are set in
@@ -737,7 +737,7 @@ gravity_DownloadBlocklistFromUrl() {
     if [[ -r "${saveLocation}" ]]; then
       echo -e "  ${CROSS} List download failed: ${COL_LIGHT_GREEN}using previously cached list${COL_NC}"
       # Add domains to database table file
-      parseList "${adlistID}" "${saveLocation}" "${target}"
+      pihole-FTL gravity parseList "${saveLocation}" "${target}" "${adlistID}"
       database_adlist_number "${adlistID}"
       database_adlist_status "${adlistID}" "3"
     else
