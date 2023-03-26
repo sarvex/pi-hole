@@ -415,6 +415,25 @@ gravity_DownloadBlocklists() {
     echo -e "${OVER}  ${TICK} ${str}"
   fi
 
+  str="Creating new gravity databases"
+  echo -ne "  ${INFO} ${str}..."
+
+  # Gravity copying SQL script
+  copyGravity="$(cat "${gravityDBcopy}")"
+  if [[ "${gravityDBfile}" != "${gravityDBfile_default}" ]]; then
+    # Replace default gravity script location by custom location
+    copyGravity="${copyGravity//"${gravityDBfile_default}"/"${gravityDBfile}"}"
+  fi
+
+  output=$( { pihole-FTL sqlite3 "${gravityTEMPfile}" <<< "${copyGravity}"; } 2>&1 )
+  status="$?"
+
+  if [[ "${status}" -ne 0 ]]; then
+    echo -e "\\n  ${CROSS} Unable to copy data from ${gravityDBfile} to ${gravityTEMPfile}\\n  ${output}"
+    return 1
+  fi
+  echo -e "${OVER}  ${TICK} ${str}"
+
   # Use compression to reduce the amount of data that is transferred
   # between the Pi-hole and the ad list provider. Use this feature
   # only if it is supported by the locally available version of curl
@@ -460,25 +479,6 @@ gravity_DownloadBlocklists() {
     fi
     echo ""
   done
-
-  str="Creating new gravity databases"
-  echo -ne "  ${INFO} ${str}..."
-
-  # Gravity copying SQL script
-  copyGravity="$(cat "${gravityDBcopy}")"
-  if [[ "${gravityDBfile}" != "${gravityDBfile_default}" ]]; then
-    # Replace default gravity script location by custom location
-    copyGravity="${copyGravity//"${gravityDBfile_default}"/"${gravityDBfile}"}"
-  fi
-
-  output=$( { pihole-FTL sqlite3 "${gravityTEMPfile}" <<< "${copyGravity}"; } 2>&1 )
-  status="$?"
-
-  if [[ "${status}" -ne 0 ]]; then
-    echo -e "\\n  ${CROSS} Unable to copy data from ${gravityDBfile} to ${gravityTEMPfile}\\n  ${output}"
-    return 1
-  fi
-  echo -e "${OVER}  ${TICK} ${str}"
 
   gravity_Blackbody=true
 }
@@ -599,7 +599,7 @@ gravity_DownloadBlocklistFromUrl() {
   if [[ "${success}" == true ]]; then
     if [[ "${httpCode}" == "304" ]]; then
       # Add domains to database table file
-      pihole-FTL gravity parseList "${saveLocation}" "${gravityDBfile}" "${adlistID}"
+      pihole-FTL gravity parseList "${saveLocation}" "${gravityTEMPfile}" "${adlistID}"
       database_adlist_status "${adlistID}" "2"
       done="true"
     # Check if $listCurlBuffer is a non-zero length file
@@ -609,7 +609,7 @@ gravity_DownloadBlocklistFromUrl() {
       # Remove curl buffer file after its use
       rm "${listCurlBuffer}"
       # Add domains to database table file
-      pihole-FTL gravity parseList "${saveLocation}" "${gravityDBfile}" "${adlistID}"
+      pihole-FTL gravity parseList "${saveLocation}" "${gravityTEMPfile}" "${adlistID}"
       # Compare lists, are they identical?
       compareLists "${adlistID}" "${saveLocation}"
       done="true"
@@ -625,7 +625,7 @@ gravity_DownloadBlocklistFromUrl() {
     if [[ -r "${saveLocation}" ]]; then
       echo -e "  ${CROSS} List download failed: ${COL_LIGHT_GREEN}using previously cached list${COL_NC}"
       # Add domains to database table file
-      pihole-FTL gravity parseList "${saveLocation}" "${gravityDBfile}" "${adlistID}"
+      pihole-FTL gravity parseList "${saveLocation}" "${gravityTEMPfile}" "${adlistID}"
       database_adlist_status "${adlistID}" "3"
     else
       echo -e "  ${CROSS} List download failed: ${COL_LIGHT_RED}no cached list available${COL_NC}"
