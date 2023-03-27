@@ -679,7 +679,7 @@ gravity_Table_Count() {
   num="$(pihole-FTL sqlite3 "${gravityDBfile}" "SELECT COUNT(*) FROM ${table};")"
   if [[ "${table}" == "vw_gravity" ]]; then
     local unique
-    unique="$(pihole-FTL sqlite3 "${gravityDBfile}" "SELECT COUNT(DISTINCT domain) FROM ${table};")"
+    unique="$(pihole-FTL sqlite3 "${gravityDBfile}" "SELECT COUNT(domain) FROM (SELECT DISTINCT domain FROM ${table});")"
     echo -e "  ${INFO} Number of ${str}: ${num} (${COL_BOLD}${unique} unique domains${COL_NC})"
     pihole-FTL sqlite3 "${gravityDBfile}" "INSERT OR REPLACE INTO info (property,value) VALUES ('gravity_count',${unique});"
   else
