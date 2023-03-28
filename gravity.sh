@@ -677,9 +677,9 @@ gravity_Table_Count() {
   local str="${2}"
   local num
   num="$(pihole-FTL sqlite3 "${gravityDBfile}" "SELECT COUNT(*) FROM ${table};")"
-  if [[ "${table}" == "vw_gravity" ]]; then
+  if [[ "${table}" == "gravity" ]]; then
     local unique
-    unique="$(pihole-FTL sqlite3 "${gravityDBfile}" "SELECT COUNT(domain) FROM (SELECT DISTINCT domain FROM ${table});")"
+    unique="$(pihole-FTL sqlite3 "${gravityDBfile}" "SELECT COUNT(*) FROM (SELECT DISTINCT domain FROM ${table});")"
     echo -e "  ${INFO} Number of ${str}: ${num} (${COL_BOLD}${unique} unique domains${COL_NC})"
     pihole-FTL sqlite3 "${gravityDBfile}" "INSERT OR REPLACE INTO info (property,value) VALUES ('gravity_count',${unique});"
   else
@@ -689,7 +689,9 @@ gravity_Table_Count() {
 
 # Output count of blacklisted domains and regex filters
 gravity_ShowCount() {
-  gravity_Table_Count "vw_gravity" "gravity domains" ""
+  # Here we use the table "gravity" instead of the view "vw_gravity" for speed.
+  # It's safe to replace it here, because right after a gravity run both will show the exactly same number of domains.
+  gravity_Table_Count "gravity" "gravity domains" ""
   gravity_Table_Count "vw_blacklist" "exact blacklisted domains"
   gravity_Table_Count "vw_regex_blacklist" "regex blacklist filters"
   gravity_Table_Count "vw_whitelist" "exact whitelisted domains"
